@@ -106,6 +106,11 @@ async function save() {
   }
 }
 onMounted(load)
+
+function closeModal() {
+  creating.value = false
+  editing.value = undefined
+}
 </script>
 <template>
   <div class="page-heading">
@@ -276,15 +281,7 @@ onMounted(load)
     >
     <div v-if="modalError" class="form-alert error" role="alert">{{ modalError }}</div>
     <template #footer
-      ><button
-        class="button secondary"
-        :disabled="busy"
-        @click="
-          creating = false
-          editing = undefined
-        "
-      >
-        取消</button
+      ><button class="button secondary" :disabled="busy" @click="closeModal">取消</button
       ><button
         class="button primary"
         :disabled="busy"

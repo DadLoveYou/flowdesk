@@ -93,6 +93,11 @@ watch(
   },
 )
 onMounted(load)
+
+function openLibrary() {
+  libraryOpen.value = true
+  void load()
+}
 </script>
 <template>
   <div class="attachment-picker">
@@ -117,14 +122,7 @@ onMounted(load)
     </button>
     <div class="attachment-library">
       <span>最多关联 10 个附件</span
-      ><button
-        type="button"
-        class="text-button"
-        @click="
-          libraryOpen = true
-          load()
-        "
-      >
+      ><button type="button" class="text-button" @click="openLibrary">
         <Paperclip :size="14" />从文件中心选择
       </button>
     </div>

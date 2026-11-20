@@ -156,6 +156,18 @@ async function exportCsv() {
     exporting.value = false
   }
 }
+
+function resetFilters() {
+  q.value = ''
+  category.value = ''
+  sort.value = 'newest'
+  status.value = reviewMode.value ? 'pending' : ''
+}
+function clearFilters() {
+  q.value = ''
+  status.value = ''
+  category.value = ''
+}
 </script>
 <template>
   <div class="page-heading">
@@ -207,16 +219,7 @@ async function exportCsv() {
           <option value="newest">最新创建</option>
           <option value="oldest">最早创建</option>
           <option v-if="auth.can('request:amount')" value="amount">预算从高到低</option></select
-        ><button
-          class="icon-button bordered"
-          aria-label="重置筛选"
-          @click="
-            q = ''
-            category = ''
-            sort = 'newest'
-            status = reviewMode ? 'pending' : ''
-          "
-        >
+        ><button class="icon-button bordered" aria-label="重置筛选" @click="resetFilters">
           <SlidersHorizontal :size="17" /></button
         ><button class="icon-button bordered" aria-label="刷新列表" @click="load">
           <RefreshCw :size="17" :class="{ spinning: loading }" />
@@ -293,16 +296,7 @@ async function exportCsv() {
       v-else-if="!items.length && !error"
       title="没有找到符合条件的申请"
       description="试试其他筛选条件，或创建一份新的申请。"
-      ><button
-        class="button secondary"
-        @click="
-          q = ''
-          status = ''
-          category = ''
-        "
-      >
-        清空筛选
-      </button></EmptyState
+      ><button class="button secondary" @click="clearFilters">清空筛选</button></EmptyState
     ><Pagination :page="page" :total="total" :page-size="8" @change="page = $event" />
   </section>
   <div class="scope-note">
