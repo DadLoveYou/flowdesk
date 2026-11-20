@@ -4,7 +4,9 @@
 
 ![Build and verify](https://github.com/DadLoveYou/flowdesk/actions/workflows/ci.yml/badge.svg)
 
-![工作台](docs/screenshots/dashboard.jpg)
+![工作台](docs/screenshots/dashboard.png)
+
+[申请流转截图](docs/screenshots/request-flow.png) · [文件中心截图](docs/screenshots/files.png) · [手机表单截图](docs/screenshots/mobile-form.png)
 
 ## 开始体验
 
