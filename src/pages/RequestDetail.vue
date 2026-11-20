@@ -1,30 +1,330 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { ArrowLeft, Pencil, Check, X, FileText, Download, Clock3, ShieldCheck, ArrowRight, UserRound } from 'lucide-vue-next'
+import {
+  ArrowLeft,
+  Pencil,
+  Check,
+  X,
+  FileText,
+  Download,
+  Clock3,
+  ShieldCheck,
+  ArrowRight,
+  UserRound,
+} from 'lucide-vue-next'
 import { api, json, dateTime, money, fileSize, errorMessage } from '@/lib/api'
 import { type BusinessRequest, type Review, type StoredFile } from '../../shared/domain'
 import { useAuth } from '@/stores/auth'
 import { useUI } from '@/stores/ui'
 import StatusBadge from '@/components/StatusBadge.vue'
 import Modal from '@/components/Modal.vue'
-const route = useRoute(), auth = useAuth(), ui = useUI()
-const request = ref<BusinessRequest>(), reviews = ref<Review[]>([]), files = ref<StoredFile[]>([]), loading = ref(true), error = ref(''), modal = ref<'approved' | 'rejected'>(), comment = ref(''), busy = ref(false), reviewError = ref('')
-const editable = computed(() => !!request.value && request.value.ownerId === auth.user?.id && ['draft', 'rejected'].includes(request.value.status) && auth.can('request:create'))
-const reviewable = computed(() => request.value?.status === 'pending' && request.value.ownerId !== auth.user?.id && auth.can('request:review'))
-async function load() { error.value = ''; loading.value = true; try { const result = await api<{ request: BusinessRequest; reviews: Review[]; files: StoredFile[] }>(`/requests/${route.params.id}`); request.value = result.request; reviews.value = result.reviews; files.value = result.files } catch (e) { error.value = errorMessage(e) } finally { loading.value = false } }
-function openReview(decision: 'approved' | 'rejected') { modal.value = decision; comment.value = ''; reviewError.value = '' }
+const route = useRoute(),
+  auth = useAuth(),
+  ui = useUI()
+const request = ref<BusinessRequest>(),
+  reviews = ref<Review[]>([]),
+  files = ref<StoredFile[]>([]),
+  loading = ref(true),
+  error = ref(''),
+  modal = ref<'approved' | 'rejected'>(),
+  comment = ref(''),
+  busy = ref(false),
+  reviewError = ref('')
+const editable = computed(
+  () =>
+    !!request.value &&
+    request.value.ownerId === auth.user?.id &&
+    ['draft', 'rejected'].includes(request.value.status) &&
+    auth.can('request:create'),
+)
+const reviewable = computed(
+  () =>
+    request.value?.status === 'pending' &&
+    request.value.ownerId !== auth.user?.id &&
+    auth.can('request:review'),
+)
+async function load() {
+  error.value = ''
+  loading.value = true
+  try {
+    const result = await api<{ request: BusinessRequest; reviews: Review[]; files: StoredFile[] }>(
+      `/requests/${route.params.id}`,
+    )
+    request.value = result.request
+    reviews.value = result.reviews
+    files.value = result.files
+  } catch (e) {
+    error.value = errorMessage(e)
+  } finally {
+    loading.value = false
+  }
+}
+function openReview(decision: 'approved' | 'rejected') {
+  modal.value = decision
+  comment.value = ''
+  reviewError.value = ''
+}
 async function review() {
   if (!request.value || !modal.value || busy.value) return
-  busy.value = true; reviewError.value = ''
-  try { await api(`/requests/${request.value.id}/review`, { method: 'POST', body: json({ decision: modal.value, comment: comment.value, version: request.value.version }) }); ui.toast(modal.value === 'approved' ? '申请已审核通过' : '申请已退回，申请人可修改后重新提交'); modal.value = undefined; await load() } catch (e) { reviewError.value = errorMessage(e) } finally { busy.value = false }
+  busy.value = true
+  reviewError.value = ''
+  try {
+    await api(`/requests/${request.value.id}/review`, {
+      method: 'POST',
+      body: json({ decision: modal.value, comment: comment.value, version: request.value.version }),
+    })
+    ui.toast(modal.value === 'approved' ? '申请已审核通过' : '申请已退回，申请人可修改后重新提交')
+    modal.value = undefined
+    await load()
+  } catch (e) {
+    reviewError.value = errorMessage(e)
+  } finally {
+    busy.value = false
+  }
 }
 onMounted(load)
 </script>
 <template>
-  <RouterLink to="/requests" class="back-link"><ArrowLeft :size="16" />返回申请列表</RouterLink><div v-if="error" class="form-alert error" role="alert">{{ error }}<button class="text-button" @click="load">重新加载</button></div><div v-if="loading && !request" class="loading-state"><span class="spinner" />正在加载详情…</div>
-  <template v-if="request"><div class="page-heading detail-heading"><div><div class="eyebrow">{{ request.number }}</div><h1>{{ request.form.title || '未命名草稿' }}</h1><div class="detail-meta"><StatusBadge :status="request.status" /><span>{{ request.ownerName }} · {{ request.form.department }}</span><span>创建于 {{ dateTime(request.createdAt) }}</span></div></div><div class="heading-actions"><RouterLink v-if="editable" :to="`/requests/${request.id}/edit`" class="button primary"><Pencil :size="16" />{{ request.status === 'rejected' ? '修改并重新提交' : '继续编辑' }}</RouterLink><template v-if="reviewable"><button class="button secondary" @click="openReview('rejected')"><X :size="16" />退回修改</button><button class="button primary" @click="openReview('approved')"><Check :size="17" />审核通过</button></template></div></div>
-  <div class="request-progress panel"><div class="request-step done"><span><Check :size="16" /></span><div><strong>创建申请</strong><small>{{ dateTime(request.createdAt) }}</small></div></div><i /><div class="request-step" :class="{ done: request.status !== 'draft', active: request.status === 'draft' }"><span><FileText :size="16" /></span><div><strong>{{ request.status === 'draft' ? '等待提交' : '提交申请' }}</strong><small>{{ request.submittedAt ? dateTime(request.submittedAt) : '草稿待完善' }}</small></div></div><i /><div class="request-step" :class="{ active: request.status === 'pending', done: request.status === 'approved', rejected: request.status === 'rejected' }"><span><Clock3 :size="16" /></span><div><strong>{{ request.status === 'approved' ? '审核通过' : request.status === 'rejected' ? '退回修改' : '审核处理' }}</strong><small>{{ request.status === 'pending' ? '等待审核员处理' : request.status === 'approved' || request.status === 'rejected' ? dateTime(request.updatedAt) : '提交后进入审核' }}</small></div></div></div>
-  <div class="detail-layout"><div class="detail-main"><section class="panel detail-panel"><div class="panel-heading"><h2>申请信息</h2><span class="subtle-label">{{ request.form.priority === 'urgent' ? '加急处理' : '常规处理' }}</span></div><dl class="detail-grid"><div><dt>申请类型</dt><dd>{{ request.form.category }}</dd></div><div><dt>所属部门</dt><dd>{{ request.form.department }}</dd></div><div><dt>申请主体</dt><dd>{{ request.form.applicantType === 'enterprise' ? '企业主体' : '个人主体' }}</dd></div><div><dt>联系人</dt><dd>{{ request.form.contact || '未填写' }}</dd></div><template v-if="request.form.applicantType === 'enterprise'"><div><dt>企业名称</dt><dd>{{ request.form.companyName || '未填写' }}</dd></div><div><dt>统一社会信用代码</dt><dd class="mono">{{ request.form.creditCode || '未填写' }}</dd></div></template><div v-if="request.form.category === '采购申请'"><dt>预算金额</dt><dd class="detail-budget">{{ money(request.form.amount) }}</dd></div><div><dt>业务周期</dt><dd>{{ request.form.startDate || '未填写' }} <ArrowRight :size="13" /> {{ request.form.endDate || '未填写' }}</dd></div><div class="full"><dt>申请说明</dt><dd class="detail-description">{{ request.form.description || '尚未填写申请说明' }}</dd></div><div v-if="request.form.justification" class="full"><dt>预算依据</dt><dd class="detail-description">{{ request.form.justification }}</dd></div></dl></section><section class="panel detail-panel"><div class="panel-heading"><h2>相关附件 <span class="number-badge">{{ files.length }}</span></h2><span class="subtle-label">完整性已校验</span></div><div v-for="file in files" :key="file.id" class="detail-file"><span class="document-icon"><FileText :size="20" /></span><div><strong>{{ file.name }}</strong><small>{{ fileSize(file.size) }} · {{ dateTime(file.createdAt) }}</small></div><a :href="`/api/files/${file.id}/download`" class="button secondary small"><Download :size="14" />下载</a></div><p v-if="!files.length" class="muted detail-no-files">此申请没有关联附件。</p></section></div><aside class="panel detail-timeline"><div class="panel-heading"><div><h2>流转记录</h2><p>业务过程完整留痕</p></div><ShieldCheck :size="18" class="muted" /></div><div class="timeline"><div class="timeline-event"><span class="timeline-node"><FileText :size="14" /></span><div><strong>创建申请</strong><p>{{ request.ownerName }} 创建了这份申请</p><time>{{ dateTime(request.createdAt) }}</time></div></div><div v-for="reviewItem in reviews" :key="reviewItem.id" class="timeline-event"><span class="timeline-node" :class="{ rejected: reviewItem.action === '退回修改', approved: reviewItem.action === '审核通过' }"><UserRound :size="14" /></span><div><strong>{{ reviewItem.action }}</strong><p>{{ reviewItem.actorName }}</p><blockquote>{{ reviewItem.comment }}</blockquote><time>{{ dateTime(reviewItem.createdAt) }}</time></div></div><div v-if="request.status === 'pending'" class="timeline-event pending"><span class="timeline-node"><Clock3 :size="14" /></span><div><strong>等待审核</strong><p>审核员将核对申请信息与附件</p></div></div></div></aside></div></template>
-  <Modal v-if="modal" :title="modal === 'approved' ? '确认审核通过' : '退回申请修改'" @close="!busy && (modal = undefined)"><div class="review-summary"><FileText :size="20" /><div><strong>{{ request?.form.title }}</strong><small>{{ request?.number }} · {{ request?.ownerName }}</small></div></div><div class="form-field"><label for="review-comment">{{ modal === 'rejected' ? '修改意见（至少 5 字）' : '审核意见（选填）' }}</label><textarea id="review-comment" v-model="comment" rows="4" maxlength="500" :placeholder="modal === 'approved' ? '例如：资料完整，符合申请条件。' : '请告诉申请人需要补充或修改哪些内容…'" /></div><div v-if="reviewError" class="form-alert error">{{ reviewError }}</div><template #footer><button class="button secondary" :disabled="busy" @click="modal = undefined">取消</button><button class="button" :class="modal === 'approved' ? 'primary' : 'danger'" :disabled="busy" @click="review"><span v-if="busy" class="spinner" />{{ busy ? '正在处理' : modal === 'approved' ? '确认通过' : '确认退回' }}</button></template></Modal>
+  <RouterLink to="/requests" class="back-link"><ArrowLeft :size="16" />返回申请列表</RouterLink>
+  <div v-if="error" class="form-alert error" role="alert">
+    {{ error }}<button class="text-button" @click="load">重新加载</button>
+  </div>
+  <div v-if="loading && !request" class="loading-state"><span class="spinner" />正在加载详情…</div>
+  <template v-if="request"
+    ><div class="page-heading detail-heading">
+      <div>
+        <div class="eyebrow">{{ request.number }}</div>
+        <h1>{{ request.form.title || '未命名草稿' }}</h1>
+        <div class="detail-meta">
+          <StatusBadge :status="request.status" /><span
+            >{{ request.ownerName }} · {{ request.form.department }}</span
+          ><span>创建于 {{ dateTime(request.createdAt) }}</span>
+        </div>
+      </div>
+      <div class="heading-actions">
+        <RouterLink v-if="editable" :to="`/requests/${request.id}/edit`" class="button primary"
+          ><Pencil :size="16" />{{
+            request.status === 'rejected' ? '修改并重新提交' : '继续编辑'
+          }}</RouterLink
+        ><template v-if="reviewable"
+          ><button class="button secondary" @click="openReview('rejected')">
+            <X :size="16" />退回修改</button
+          ><button class="button primary" @click="openReview('approved')">
+            <Check :size="17" />审核通过
+          </button></template
+        >
+      </div>
+    </div>
+    <div class="request-progress panel">
+      <div class="request-step done">
+        <span><Check :size="16" /></span>
+        <div>
+          <strong>创建申请</strong><small>{{ dateTime(request.createdAt) }}</small>
+        </div>
+      </div>
+      <i />
+      <div
+        class="request-step"
+        :class="{ done: request.status !== 'draft', active: request.status === 'draft' }"
+      >
+        <span><FileText :size="16" /></span>
+        <div>
+          <strong>{{ request.status === 'draft' ? '等待提交' : '提交申请' }}</strong
+          ><small>{{ request.submittedAt ? dateTime(request.submittedAt) : '草稿待完善' }}</small>
+        </div>
+      </div>
+      <i />
+      <div
+        class="request-step"
+        :class="{
+          active: request.status === 'pending',
+          done: request.status === 'approved',
+          rejected: request.status === 'rejected',
+        }"
+      >
+        <span><Clock3 :size="16" /></span>
+        <div>
+          <strong>{{
+            request.status === 'approved'
+              ? '审核通过'
+              : request.status === 'rejected'
+                ? '退回修改'
+                : '审核处理'
+          }}</strong
+          ><small>{{
+            request.status === 'pending'
+              ? '等待审核员处理'
+              : request.status === 'approved' || request.status === 'rejected'
+                ? dateTime(request.updatedAt)
+                : '提交后进入审核'
+          }}</small>
+        </div>
+      </div>
+    </div>
+    <div class="detail-layout">
+      <div class="detail-main">
+        <section class="panel detail-panel">
+          <div class="panel-heading">
+            <h2>申请信息</h2>
+            <span class="subtle-label">{{
+              request.form.priority === 'urgent' ? '加急处理' : '常规处理'
+            }}</span>
+          </div>
+          <dl class="detail-grid">
+            <div>
+              <dt>申请类型</dt>
+              <dd>{{ request.form.category }}</dd>
+            </div>
+            <div>
+              <dt>所属部门</dt>
+              <dd>{{ request.form.department }}</dd>
+            </div>
+            <div>
+              <dt>申请主体</dt>
+              <dd>{{ request.form.applicantType === 'enterprise' ? '企业主体' : '个人主体' }}</dd>
+            </div>
+            <div>
+              <dt>联系人</dt>
+              <dd>{{ request.form.contact || '未填写' }}</dd>
+            </div>
+            <template v-if="request.form.applicantType === 'enterprise'"
+              ><div>
+                <dt>企业名称</dt>
+                <dd>{{ request.form.companyName || '未填写' }}</dd>
+              </div>
+              <div>
+                <dt>统一社会信用代码</dt>
+                <dd class="mono">{{ request.form.creditCode || '未填写' }}</dd>
+              </div></template
+            >
+            <div v-if="request.form.category === '采购申请'">
+              <dt>预算金额</dt>
+              <dd class="detail-budget">{{ money(request.form.amount) }}</dd>
+            </div>
+            <div>
+              <dt>业务周期</dt>
+              <dd>
+                {{ request.form.startDate || '未填写' }} <ArrowRight :size="13" />
+                {{ request.form.endDate || '未填写' }}
+              </dd>
+            </div>
+            <div class="full">
+              <dt>申请说明</dt>
+              <dd class="detail-description">
+                {{ request.form.description || '尚未填写申请说明' }}
+              </dd>
+            </div>
+            <div v-if="request.form.justification" class="full">
+              <dt>预算依据</dt>
+              <dd class="detail-description">{{ request.form.justification }}</dd>
+            </div>
+          </dl>
+        </section>
+        <section class="panel detail-panel">
+          <div class="panel-heading">
+            <h2>
+              相关附件 <span class="number-badge">{{ files.length }}</span>
+            </h2>
+            <span class="subtle-label">完整性已校验</span>
+          </div>
+          <div v-for="file in files" :key="file.id" class="detail-file">
+            <span class="document-icon"><FileText :size="20" /></span>
+            <div>
+              <strong>{{ file.name }}</strong
+              ><small>{{ fileSize(file.size) }} · {{ dateTime(file.createdAt) }}</small>
+            </div>
+            <a :href="`/api/files/${file.id}/download`" class="button secondary small"
+              ><Download :size="14" />下载</a
+            >
+          </div>
+          <p v-if="!files.length" class="muted detail-no-files">此申请没有关联附件。</p>
+        </section>
+      </div>
+      <aside class="panel detail-timeline">
+        <div class="panel-heading">
+          <div>
+            <h2>流转记录</h2>
+            <p>业务过程完整留痕</p>
+          </div>
+          <ShieldCheck :size="18" class="muted" />
+        </div>
+        <div class="timeline">
+          <div class="timeline-event">
+            <span class="timeline-node"><FileText :size="14" /></span>
+            <div>
+              <strong>创建申请</strong>
+              <p>{{ request.ownerName }} 创建了这份申请</p>
+              <time>{{ dateTime(request.createdAt) }}</time>
+            </div>
+          </div>
+          <div v-for="reviewItem in reviews" :key="reviewItem.id" class="timeline-event">
+            <span
+              class="timeline-node"
+              :class="{
+                rejected: reviewItem.action === '退回修改',
+                approved: reviewItem.action === '审核通过',
+              }"
+              ><UserRound :size="14"
+            /></span>
+            <div>
+              <strong>{{ reviewItem.action }}</strong>
+              <p>{{ reviewItem.actorName }}</p>
+              <blockquote>{{ reviewItem.comment }}</blockquote>
+              <time>{{ dateTime(reviewItem.createdAt) }}</time>
+            </div>
+          </div>
+          <div v-if="request.status === 'pending'" class="timeline-event pending">
+            <span class="timeline-node"><Clock3 :size="14" /></span>
+            <div>
+              <strong>等待审核</strong>
+              <p>审核员将核对申请信息与附件</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div></template
+  >
+  <Modal
+    v-if="modal"
+    :title="modal === 'approved' ? '确认审核通过' : '退回申请修改'"
+    @close="!busy && (modal = undefined)"
+    ><div class="review-summary">
+      <FileText :size="20" />
+      <div>
+        <strong>{{ request?.form.title }}</strong
+        ><small>{{ request?.number }} · {{ request?.ownerName }}</small>
+      </div>
+    </div>
+    <div class="form-field">
+      <label for="review-comment">{{
+        modal === 'rejected' ? '修改意见（至少 5 字）' : '审核意见（选填）'
+      }}</label
+      ><textarea
+        id="review-comment"
+        v-model="comment"
+        rows="4"
+        maxlength="500"
+        :placeholder="
+          modal === 'approved'
+            ? '例如：资料完整，符合申请条件。'
+            : '请告诉申请人需要补充或修改哪些内容…'
+        "
+      />
+    </div>
+    <div v-if="reviewError" class="form-alert error">{{ reviewError }}</div>
+    <template #footer
+      ><button class="button secondary" :disabled="busy" @click="modal = undefined">取消</button
+      ><button
+        class="button"
+        :class="modal === 'approved' ? 'primary' : 'danger'"
+        :disabled="busy"
+        @click="review"
+      >
+        <span v-if="busy" class="spinner" />{{
+          busy ? '正在处理' : modal === 'approved' ? '确认通过' : '确认退回'
+        }}
+      </button></template
+    ></Modal
+  >
 </template>

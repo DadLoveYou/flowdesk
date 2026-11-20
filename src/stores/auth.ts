@@ -9,8 +9,29 @@ export const useAuth = defineStore('auth', () => {
   const ready = ref(false)
   const permissions = computed(() => user.value?.permissions || [])
   const can = (permission: Permission) => permissions.value.includes(permission)
-  async function restore() { try { user.value = await api<User>('/auth/me') } catch { user.value = null } finally { ready.value = true } }
-  async function login(username: string, password: string) { user.value = await api<User>('/auth/login', { method: 'POST', body: json({ username, password }) }); ready.value = true }
-  async function logout() { useUploads().stopAll(); try { await api('/auth/logout', { method: 'POST' }) } finally { user.value = null } }
+  async function restore() {
+    try {
+      user.value = await api<User>('/auth/me')
+    } catch {
+      user.value = null
+    } finally {
+      ready.value = true
+    }
+  }
+  async function login(username: string, password: string) {
+    user.value = await api<User>('/auth/login', {
+      method: 'POST',
+      body: json({ username, password }),
+    })
+    ready.value = true
+  }
+  async function logout() {
+    useUploads().stopAll()
+    try {
+      await api('/auth/logout', { method: 'POST' })
+    } finally {
+      user.value = null
+    }
+  }
   return { user, ready, can, permissions, restore, login, logout }
 })

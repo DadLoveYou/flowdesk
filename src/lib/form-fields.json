@@ -1,15 +1,68 @@
 {
   "applicantFields": [
-    { "key": "applicantType", "label": "申请主体", "type": "select", "required": true, "options": [{ "label": "企业主体", "value": "enterprise" }, { "label": "个人主体", "value": "personal" }] },
-    { "key": "contact", "label": "联系人", "type": "text", "placeholder": "填写业务联系人姓名", "required": true },
-    { "key": "companyName", "label": "企业名称", "type": "text", "placeholder": "填写营业执照上的企业全称", "required": true, "visible": { "field": "applicantType", "operator": "eq", "value": "enterprise" } },
-    { "key": "creditCode", "label": "统一社会信用代码", "type": "text", "placeholder": "18 位大写字母或数字", "required": true, "help": "资质备案会自动核查该企业是否已存在备案。", "visible": { "field": "applicantType", "operator": "eq", "value": "enterprise" } }
+    {
+      "key": "applicantType",
+      "label": "申请主体",
+      "type": "select",
+      "required": true,
+      "options": [
+        { "label": "企业主体", "value": "enterprise" },
+        { "label": "个人主体", "value": "personal" }
+      ]
+    },
+    {
+      "key": "contact",
+      "label": "联系人",
+      "type": "text",
+      "placeholder": "填写业务联系人姓名",
+      "required": true
+    },
+    {
+      "key": "companyName",
+      "label": "企业名称",
+      "type": "text",
+      "placeholder": "填写营业执照上的企业全称",
+      "required": true,
+      "visible": { "field": "applicantType", "operator": "eq", "value": "enterprise" }
+    },
+    {
+      "key": "creditCode",
+      "label": "统一社会信用代码",
+      "type": "text",
+      "placeholder": "18 位大写字母或数字",
+      "required": true,
+      "help": "资质备案会自动核查该企业是否已存在备案。",
+      "visible": { "field": "applicantType", "operator": "eq", "value": "enterprise" }
+    }
   ],
   "detailFields": [
-    { "key": "amount", "label": "预算金额（元）", "type": "number", "placeholder": "0.00", "required": true, "visible": { "field": "category", "operator": "eq", "value": "采购申请" } },
-    { "key": "justification", "label": "预算依据", "type": "textarea", "placeholder": "说明预算构成、供应商报价或采购必要性…", "required": true, "full": true, "help": "预算超过 20,000 元时，需要补充预算依据。", "visible": { "field": "amount", "operator": "gt", "value": 20000 } },
+    {
+      "key": "amount",
+      "label": "预算金额（元）",
+      "type": "number",
+      "placeholder": "0.00",
+      "required": true,
+      "visible": { "field": "category", "operator": "eq", "value": "采购申请" }
+    },
+    {
+      "key": "justification",
+      "label": "预算依据",
+      "type": "textarea",
+      "placeholder": "说明预算构成、供应商报价或采购必要性…",
+      "required": true,
+      "full": true,
+      "help": "预算超过 20,000 元时，需要补充预算依据。",
+      "visible": { "field": "amount", "operator": "gt", "value": 20000 }
+    },
     { "key": "startDate", "label": "开始日期", "type": "date", "required": true },
     { "key": "endDate", "label": "结束日期", "type": "date", "required": true },
-    { "key": "description", "label": "申请说明", "type": "textarea", "placeholder": "说明业务背景、具体需求及预期效果，至少 10 个字…", "full": true, "required": true }
+    {
+      "key": "description",
+      "label": "申请说明",
+      "type": "textarea",
+      "placeholder": "说明业务背景、具体需求及预期效果，至少 10 个字…",
+      "full": true,
+      "required": true
+    }
   ]
 }

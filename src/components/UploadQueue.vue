@@ -5,4 +5,60 @@ import { fileSize } from '@/lib/api'
 defineProps<{ keys?: string[] }>()
 const uploads = useUploads()
 </script>
-<template><div class="upload-queue"><div v-for="task in uploads.tasks.filter(t => !keys || keys.includes(t.key))" :key="task.key" class="upload-task"><span class="document-icon"><FileText :size="20" /></span><div class="upload-task-main"><div class="upload-task-title"><strong>{{ task.name }}</strong><span>{{ fileSize(task.size) }}</span></div><div class="progress-track"><span :style="{ width: (task.state === 'hashing' ? task.hashProgress : task.progress) * 100 + '%' }" :class="{ done: task.state === 'complete', error: task.state === 'error' }" /></div><div class="upload-task-meta"><span v-if="task.state === 'queued'">正在排队，等待传输</span><span v-else-if="task.state === 'hashing'">正在校验文件 {{ Math.round(task.hashProgress * 100) }}%</span><span v-else-if="task.state === 'uploading'">正在上传 · 3 路并发 · {{ Math.round(task.progress * 100) }}%</span><span v-else-if="task.state === 'paused'">已暂停 · 进度已保留</span><span v-else-if="task.state === 'merging'">正在合并并验证文件…</span><span v-else-if="task.state === 'complete'" class="success-text">{{ task.instant ? '文件已存在，秒传完成' : '上传完成，完整性校验通过' }}</span><span v-else class="error-text">{{ task.error }}</span></div></div><button v-if="task.state === 'uploading'" class="icon-button bordered" :aria-label="`暂停${task.name}`" @click="uploads.pause(task.key)"><Pause :size="16" /></button><button v-else-if="task.state === 'paused' || task.state === 'error'" class="icon-button bordered" :aria-label="`继续上传${task.name}`" @click="uploads.resume(task.key)"><component :is="task.state === 'error' ? RotateCcw : Play" :size="16" /></button><CheckCircle2 v-else-if="task.state === 'complete'" :size="21" class="success-text" /><Loader2 v-else :size="19" class="spinning muted" /></div></div></template>
+<template>
+  <div class="upload-queue">
+    <div
+      v-for="task in uploads.tasks.filter((t) => !keys || keys.includes(t.key))"
+      :key="task.key"
+      class="upload-task"
+    >
+      <span class="document-icon"><FileText :size="20" /></span>
+      <div class="upload-task-main">
+        <div class="upload-task-title">
+          <strong>{{ task.name }}</strong
+          ><span>{{ fileSize(task.size) }}</span>
+        </div>
+        <div class="progress-track">
+          <span
+            :style="{
+              width: (task.state === 'hashing' ? task.hashProgress : task.progress) * 100 + '%',
+            }"
+            :class="{ done: task.state === 'complete', error: task.state === 'error' }"
+          />
+        </div>
+        <div class="upload-task-meta">
+          <span v-if="task.state === 'queued'">正在排队，等待传输</span
+          ><span v-else-if="task.state === 'hashing'"
+            >正在校验文件 {{ Math.round(task.hashProgress * 100) }}%</span
+          ><span v-else-if="task.state === 'uploading'"
+            >正在上传 · 3 路并发 · {{ Math.round(task.progress * 100) }}%</span
+          ><span v-else-if="task.state === 'paused'">已暂停 · 进度已保留</span
+          ><span v-else-if="task.state === 'merging'">正在合并并验证文件…</span
+          ><span v-else-if="task.state === 'complete'" class="success-text">{{
+            task.instant ? '文件已存在，秒传完成' : '上传完成，完整性校验通过'
+          }}</span
+          ><span v-else class="error-text">{{ task.error }}</span>
+        </div>
+      </div>
+      <button
+        v-if="task.state === 'uploading'"
+        class="icon-button bordered"
+        :aria-label="`暂停${task.name}`"
+        @click="uploads.pause(task.key)"
+      >
+        <Pause :size="16" /></button
+      ><button
+        v-else-if="task.state === 'paused' || task.state === 'error'"
+        class="icon-button bordered"
+        :aria-label="`继续上传${task.name}`"
+        @click="uploads.resume(task.key)"
+      >
+        <component :is="task.state === 'error' ? RotateCcw : Play" :size="16" /></button
+      ><CheckCircle2
+        v-else-if="task.state === 'complete'"
+        :size="21"
+        class="success-text"
+      /><Loader2 v-else :size="19" class="spinning muted" />
+    </div>
+  </div>
+</template>

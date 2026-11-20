@@ -9,8 +9,12 @@ import './styles.css'
 const app = createApp(App)
 app.use(createPinia())
 app.directive('permission', {
-  mounted(el: HTMLElement, binding) { if (!useAuth().can(binding.value as Permission)) el.remove() },
-  updated(el: HTMLElement, binding) { if (!useAuth().can(binding.value as Permission)) el.remove() },
+  mounted(el: HTMLElement, binding) {
+    if (!useAuth().can(binding.value as Permission)) el.remove()
+  },
+  updated(el: HTMLElement, binding) {
+    if (!useAuth().can(binding.value as Permission)) el.remove()
+  },
 })
 app.use(router)
 app.mount('#app')

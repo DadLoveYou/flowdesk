@@ -2,9 +2,9 @@ services:
   flowdesk:
     build: .
     ports:
-      - "3001:3001"
+      - '3001:3001'
     environment:
-      DEMO_MODE: "true"
+      DEMO_MODE: 'true'
     volumes:
       - flowdesk_data:/app/data
     restart: unless-stopped

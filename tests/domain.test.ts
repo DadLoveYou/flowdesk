@@ -9,12 +9,17 @@ it('rejects nonexistent calendar dates and accepts valid leap days', () => {
 })
 it('requires company identity only for enterprise applicants', () => {
   assert.ok(submissionErrors(emptyForm()).companyName)
-  assert.equal(submissionErrors({ ...emptyForm(), applicantType: 'personal' }).companyName, undefined)
+  assert.equal(
+    submissionErrors({ ...emptyForm(), applicantType: 'personal' }).companyName,
+    undefined,
+  )
 })
 it('requires budget explanations above the threshold and checks date ordering', () => {
   assert.ok(submissionErrors({ ...emptyForm(), amount: 20001 }).justification)
   assert.equal(submissionErrors({ ...emptyForm(), amount: 20000 }).justification, undefined)
-  assert.ok(submissionErrors({ ...emptyForm(), startDate: '2026-11-21', endDate: '2026-11-20' }).endDate)
+  assert.ok(
+    submissionErrors({ ...emptyForm(), startDate: '2026-11-21', endDate: '2026-11-20' }).endDate,
+  )
 })
 it('keeps account management and approval capabilities outside operator permissions', () => {
   assert.ok(rolePermissions.operator.includes('request:create'))
@@ -22,7 +27,8 @@ it('keeps account management and approval capabilities outside operator permissi
   assert.ok(!rolePermissions.reviewer.includes('users'))
 })
 it('evaluates serializable field conditions without executing scripts', () => {
-  const company = applicantFields.find(f => f.key === 'companyName')!, budget = detailFields.find(f => f.key === 'justification')!
+  const company = applicantFields.find((f) => f.key === 'companyName')!,
+    budget = detailFields.find((f) => f.key === 'justification')!
   assert.equal(isFieldVisible(company, { ...emptyForm(), applicantType: 'personal' }), false)
   assert.equal(isFieldVisible(company, emptyForm()), true)
   assert.equal(isFieldVisible(budget, { ...emptyForm(), amount: 20000 }), false)
